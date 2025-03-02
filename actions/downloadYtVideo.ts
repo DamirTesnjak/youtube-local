@@ -7,7 +7,22 @@ import readline from "readline";
 // import ffmpeg from "ffmpeg-static"
 import ytdl from '@distube/ytdl-core';
 
-export async function downloadYtVideo(_prevState, formData) {
+let memoryStore = {};
+
+export async function setMemoryCache(value) {
+    memoryStore = { ...value };
+}
+
+export async function getMemoryCache() {
+    return memoryStore;
+}
+
+export async function clearMemoryCache() {
+    memoryStore = {};
+}
+
+export async function downloadYtVideo(formData) {
+    console.log("formData", formData);
     const youtubeUrlVideo = formData.get('ytUrlVideo');
     const downloadedVideoName = formData.get('downloadedVideoName');
 
@@ -40,7 +55,7 @@ export async function downloadYtVideo(_prevState, formData) {
 // Prepare the progress bar
     let progressbarHandle = null;
     const progressbarInterval = 1000;
-    const showProgress = () => {
+    const showProgress = async () => {
         readline.cursorTo(process.stdout, 0);
         const toMB = i => (i / 1024 / 1024).toFixed(2);
 
@@ -55,6 +70,16 @@ export async function downloadYtVideo(_prevState, formData) {
 
         process.stdout.write(`running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`);
         readline.moveCursor(process.stdout, 0, -3);
+
+        await setMemoryCache({
+            "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
+            "audioMB": `(${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB).${' '.repeat(10)}\n`,
+            "videoMessage": `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
+            "videoMB": `(${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB).${' '.repeat(10)}\n`,
+            "mergedMessage": `Merged | processing frame ${tracker.merged.frame} `,
+            "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed}).${' '.repeat(10)}\n`,
+            "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
+        });
     };
 
     const ffmpegProcess = cp.spawn("./node_modules/ffmpeg-static/ffmpeg", [
@@ -80,8 +105,13 @@ export async function downloadYtVideo(_prevState, formData) {
         ],
     });
 
-    ffmpegProcess.on('close', () => {
+    ffmpegProcess.on('close', async() => {
         console.log('done');
+        const memoryStore = await getMemoryCache();
+        await setMemoryCache({
+            ...memoryStore,
+            finished: true,
+        })
         // Cleanup
         process.stdout.write('\n\n\n\n');
         clearInterval(progressbarHandle);
