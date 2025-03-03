@@ -1,28 +1,14 @@
 'use server';
 
-import fs from 'fs';
 import path from "path";
 import cp from 'child_process';
 import readline from "readline";
-// import ffmpeg from "ffmpeg-static"
 import ytdl from '@distube/ytdl-core';
+import {cookies} from "next/headers";
 
-let memoryStore = {};
-
-export async function setMemoryCache(value) {
-    memoryStore = { ...value };
-}
-
-export async function getMemoryCache() {
-    return memoryStore;
-}
-
-export async function clearMemoryCache() {
-    memoryStore = {};
-}
-
-export async function downloadYtVideo(formData) {
-    console.log("formData", formData);
+export async function downloadYtVideo(formData, currentPath: string) {
+    let isFinished = false;
+    const cookieStore = await cookies();
     const youtubeUrlVideo = formData.get('ytUrlVideo');
     const downloadedVideoName = formData.get('downloadedVideoName');
 
@@ -39,8 +25,6 @@ export async function downloadYtVideo(formData) {
             errorMessage: 'You must specify a valid Youtube video URL',
         }
     }
-
-    const videoPath = path.resolve(`./${downloadedVideoName}.mp4`);
 
     // Get audio and video streams
     const audio = ytdl(youtubeUrlVideo, { quality: 'highestaudio' })
@@ -71,7 +55,7 @@ export async function downloadYtVideo(formData) {
         process.stdout.write(`running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`);
         readline.moveCursor(process.stdout, 0, -3);
 
-        await setMemoryCache({
+        cookieStore.set("progressStatus",JSON.stringify({
             "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
             "audioMB": `(${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB).${' '.repeat(10)}\n`,
             "videoMessage": `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
@@ -79,7 +63,7 @@ export async function downloadYtVideo(formData) {
             "mergedMessage": `Merged | processing frame ${tracker.merged.frame} `,
             "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed}).${' '.repeat(10)}\n`,
             "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
-        });
+        }));
     };
 
     const ffmpegProcess = cp.spawn("./node_modules/ffmpeg-static/ffmpeg", [
@@ -96,7 +80,7 @@ export async function downloadYtVideo(formData) {
         // Keep encoding
         '-c:v', 'copy',
         // Define output file
-        `./${downloadedVideoName}.mkv`,
+        `${currentPath}/${downloadedVideoName}.mkv`,
     ], {
         windowsHide: true,
         stdio: [
@@ -107,15 +91,20 @@ export async function downloadYtVideo(formData) {
 
     ffmpegProcess.on('close', async() => {
         console.log('done');
-        const memoryStore = await getMemoryCache();
-        await setMemoryCache({
-            ...memoryStore,
-            finished: true,
-        })
+        isFinished = true;
         // Cleanup
         process.stdout.write('\n\n\n\n');
         clearInterval(progressbarHandle);
     });
+
+    if (isFinished) {
+        const currentProgressStatus = JSON.parse(cookieStore.get('progressStatus')?.value || '{}');
+        cookieStore.set('progressStatus', JSON.stringify({
+            ...currentProgressStatus,
+            finished: true,
+        }))
+    }
+
 
     // Link streams
 // FFmpeg creates the transformer streams and we just have to insert / read data

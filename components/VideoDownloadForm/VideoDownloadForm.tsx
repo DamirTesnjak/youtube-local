@@ -1,21 +1,21 @@
 'use client'
 
 import {startTransition, useState, useEffect} from 'react';
-import {clearMemoryCache, downloadYtVideo, getMemoryCache} from "@/actions/downloadYtVideo";
+import { downloadYtVideo } from "@/actions/downloadYtVideo";
+import Cookies from "js-cookie";
 
 export default function VideoDownloadForm({}) {
     const [progressData, setProgressData] = useState({});
     const [progressStatus, setProgressStatus] = useState(false);
 
-
     useEffect(() => {
         if (progressStatus) {
             const interval = setInterval(async () => {
-                const progressData = await getMemoryCache();
+                const progressData = JSON.parse(Cookies.get('progressStatus') || "{}");
                 setProgressData(progressData);
 
                 if (progressData.finished) {
-                    await clearMemoryCache();
+                    Cookies.remove('progressStatus')
                     clearInterval(interval);
                     setProgressStatus(false)
                 }
@@ -37,13 +37,11 @@ export default function VideoDownloadForm({}) {
         formData.append("downloadedVideoName", downloadedVideoName.value);
         startTransition(
             async function () {
-                const response = await downloadYtVideo(formData);
+                await downloadYtVideo(formData, Cookies.get('currentPath'));
                 setProgressStatus(true);
             }
         )
     }
-
-    console.log('progressStatus', progressStatus)
 
     const displayProgressStatus = () => {
         return (
@@ -66,9 +64,9 @@ export default function VideoDownloadForm({}) {
                 <input id="ytUrlVideo"/>
                 <label>Save video name</label>
                 <input id="downloadedVideoName"/>
-                <button type="submit">Download</button>
-            </form>
-            {progressStatus ? displayProgressStatus() : null}
+            <button type="submit">Download</button>
+        </form>
+        { progressStatus ? displayProgressStatus() : null }
         </div>
 
     )

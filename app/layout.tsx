@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import VideoDownloadForm from "@/components/VideoDownloadForm/VideoDownloadForm";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,7 +22,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+    return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -31,7 +30,6 @@ export default function RootLayout({
         <h2>
             This is an app
         </h2>
-        <VideoDownloadForm />
         {children}
       </body>
     </html>
