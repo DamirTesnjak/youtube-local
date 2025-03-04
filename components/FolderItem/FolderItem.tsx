@@ -9,7 +9,7 @@ export default function FolderItem({item, uuid}) {
 
     const openFolder = (currentPath: string) => {
         Cookies.set('currentPath', currentPath);
-        router.push("/downloadVideo");
+        router.push(`/${uuid}`);
     }
 
     return (

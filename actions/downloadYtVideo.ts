@@ -1,14 +1,18 @@
 'use server';
 
-import path from "path";
 import cp from 'child_process';
 import readline from "readline";
 import ytdl from '@distube/ytdl-core';
-import {cookies} from "next/headers";
+import { findIndex } from "lodash";
 
-export async function downloadYtVideo(formData, currentPath: string) {
-    let isFinished = false;
-    const cookieStore = await cookies();
+let cache = new Map();
+
+export async function getCache(uuid: string) {
+    return cache.get(uuid);
+}
+
+export async function downloadYtVideo(formData, currentPath: string, uuid: string, downloadUuid: string) {
+    console.log('uuid', uuid);
     const youtubeUrlVideo = formData.get('ytUrlVideo');
     const downloadedVideoName = formData.get('downloadedVideoName');
 
@@ -19,22 +23,15 @@ export async function downloadYtVideo(formData, currentPath: string) {
         merged: { frame: 0, speed: '0x', fps: 0 },
     };
 
-    if (!youtubeUrlVideo || youtubeUrlVideo.length === 0 || !ytdl.validateURL(youtubeUrlVideo)) {
-        return {
-            error: false,
-            errorMessage: 'You must specify a valid Youtube video URL',
-        }
-    }
-
-    // Get audio and video streams
+// Get audio and video streams
     const audio = ytdl(youtubeUrlVideo, { quality: 'highestaudio' })
-        .on('progress', (_, downloaded, total) => {
-            tracker.audio = { downloaded, total };
-        });
+      .on('progress', (_, downloaded, total) => {
+          tracker.audio = { downloaded, total };
+      });
     const video = ytdl(youtubeUrlVideo, { quality: 'highestvideo' })
-        .on('progress', (_, downloaded, total) => {
-            tracker.video = { downloaded, total };
-        });
+      .on('progress', (_, downloaded, total) => {
+          tracker.video = { downloaded, total };
+      });
 
 // Prepare the progress bar
     let progressbarHandle = null;
@@ -43,19 +40,7 @@ export async function downloadYtVideo(formData, currentPath: string) {
         readline.cursorTo(process.stdout, 0);
         const toMB = i => (i / 1024 / 1024).toFixed(2);
 
-        process.stdout.write(`Audio  | ${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed `);
-        process.stdout.write(`(${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB).${' '.repeat(10)}\n`);
-
-        process.stdout.write(`Video  | ${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `);
-        process.stdout.write(`(${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB).${' '.repeat(10)}\n`);
-
-        process.stdout.write(`Merged | processing frame ${tracker.merged.frame} `);
-        process.stdout.write(`(at ${tracker.merged.fps} fps => ${tracker.merged.speed}).${' '.repeat(10)}\n`);
-
-        process.stdout.write(`running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`);
-        readline.moveCursor(process.stdout, 0, -3);
-
-        cookieStore.set("progressStatus",JSON.stringify({
+        const progressData = {
             "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
             "audioMB": `(${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB).${' '.repeat(10)}\n`,
             "videoMessage": `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
@@ -63,7 +48,22 @@ export async function downloadYtVideo(formData, currentPath: string) {
             "mergedMessage": `Merged | processing frame ${tracker.merged.frame} `,
             "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed}).${' '.repeat(10)}\n`,
             "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
-        }));
+        }
+
+
+        if (cache.get(uuid)){
+            const currentDownloads = cache.get(uuid);
+            const currDlIndex = findIndex(currentDownloads,  downloadUuid)
+
+            if (currDlIndex === -1) {
+                cache.set(uuid, [...currentDownloads, { [downloadUuid]: progressData }])
+            } else {
+                 currentDownloads[currDlIndex][downloadUuid] = progressData;
+                 cache.set(uuid, currentDownloads);
+            }
+        } else {
+            cache.set(uuid, [{ [downloadUuid]: progressData }])
+        }
     };
 
     const ffmpegProcess = cp.spawn("./node_modules/ffmpeg-static/ffmpeg", [
@@ -84,27 +84,27 @@ export async function downloadYtVideo(formData, currentPath: string) {
     ], {
         windowsHide: true,
         stdio: [
+            /* Standard: stdin, stdout, stderr */
             'inherit', 'inherit', 'inherit',
+            /* Custom: pipe:3, pipe:4, pipe:5 */
             'pipe', 'pipe', 'pipe',
         ],
     });
-
-    ffmpegProcess.on('close', async() => {
+    ffmpegProcess.on('close', () => {
         console.log('done');
-        isFinished = true;
         // Cleanup
-        process.stdout.write('\n\n\n\n');
+        let currentDownloads = cache.get(uuid);
+        const currDlIndex = findIndex(currentDownloads,  downloadUuid)
+
+        // remove finished download progress data
+        currentDownloads = currentDownloads.slice(0, currDlIndex).concat(currentDownloads.slice(currDlIndex+1))
+        cache.set(uuid, currentDownloads);
+
+        if (currentDownloads.length === 0) {
+            cache.set(uuid, []);
+        }
         clearInterval(progressbarHandle);
     });
-
-    if (isFinished) {
-        const currentProgressStatus = JSON.parse(cookieStore.get('progressStatus')?.value || '{}');
-        cookieStore.set('progressStatus', JSON.stringify({
-            ...currentProgressStatus,
-            finished: true,
-        }))
-    }
-
 
     // Link streams
 // FFmpeg creates the transformer streams and we just have to insert / read data

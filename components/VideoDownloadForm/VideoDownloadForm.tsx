@@ -1,30 +1,34 @@
 'use client'
 
 import {startTransition, useState, useEffect} from 'react';
-import { downloadYtVideo } from "@/actions/downloadYtVideo";
+import {downloadYtVideo, getCache} from "@/actions/downloadYtVideo";
 import Cookies from "js-cookie";
+import { v4 as uuidv4 } from "uuid";
+import {findIndex} from "lodash";
 
-export default function VideoDownloadForm({}) {
-    const [progressData, setProgressData] = useState({});
+export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, currentPath: string}) {
+    const [progressData, setProgressData] = useState([]);
     const [progressStatus, setProgressStatus] = useState(false);
+    const [downloadComplete, setDownloadComplte] = useState(false);
 
     useEffect(() => {
         if (progressStatus) {
             const interval = setInterval(async () => {
-                const progressData = JSON.parse(Cookies.get('progressStatus') || "{}");
-                setProgressData(progressData);
-
-                if (progressData.finished) {
-                    Cookies.remove('progressStatus')
+                const progressData = await getCache(uuid);
+                if (progressData && progressData.length === 0) {
                     clearInterval(interval);
-                    setProgressStatus(false)
+                    setProgressStatus(false);
+                    setDownloadComplte(true);
+                    setProgressData([])
+                } else {
+                    console.log(progressData);
+                    setProgressData(progressData);
+                    Cookies.set(uuid, JSON.stringify(progressData));
                 }
             }, 1000);
             return () => clearInterval(interval);
         }
     }, [progressStatus]);
-
-
 
     function onSubmit(e) {
         e.preventDefault();
@@ -37,24 +41,30 @@ export default function VideoDownloadForm({}) {
         formData.append("downloadedVideoName", downloadedVideoName.value);
         startTransition(
             async function () {
-                await downloadYtVideo(formData, Cookies.get('currentPath'));
-                setProgressStatus(true);
+                if (currentPath) {
+                    await downloadYtVideo(formData, currentPath, uuid, uuidv4());
+                    setProgressStatus(true);
+                }
             }
         )
     }
 
     const displayProgressStatus = () => {
-        return (
-            <div>
-                {progressData.audioMessage}
-                {progressData.audioMB}
-                {progressData.videoMessage}
-                {progressData.videoMB}
-                {progressData.mergedMessage}
-                {progressData.mergedProcessing}
-                {progressData.runningTimeMessage}
-            </div>
-        )
+        return progressData.map((progress) => {
+            const progressKey = Object.keys(progress)[0];
+            const progressInfo = progress[progressKey];
+            return (
+                <div>
+                    {progressInfo.audioMessage}
+                    {progressInfo.audioMB}
+                    {progressInfo.videoMessage}
+                    {progressInfo.videoMB}
+                    {progressInfo.mergedMessage}
+                    {progressInfo.mergedProcessing}
+                    {progressInfo.runningTimeMessage}
+                </div>
+            )
+        })
     }
 
     return (
@@ -66,7 +76,8 @@ export default function VideoDownloadForm({}) {
                 <input id="downloadedVideoName"/>
             <button type="submit">Download</button>
         </form>
-        { progressStatus ? displayProgressStatus() : null }
+        { progressStatus && progressData && progressData.length > 0 ? displayProgressStatus() : null }
+            {downloadComplete && (<div>Download complete</div>)}
         </div>
 
     )
