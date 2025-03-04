@@ -4,12 +4,12 @@ import {startTransition, useState, useEffect} from 'react';
 import {downloadYtVideo, getCache} from "@/actions/downloadYtVideo";
 import Cookies from "js-cookie";
 import { v4 as uuidv4 } from "uuid";
-import {findIndex} from "lodash";
+import ProgressBar from "@/components/ProgressBar/ProgressBar";
 
 export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, currentPath: string}) {
     const [progressData, setProgressData] = useState([]);
     const [progressStatus, setProgressStatus] = useState(false);
-    const [downloadComplete, setDownloadComplte] = useState(false);
+    const [downloadComplete, setDownloadComplete] = useState(false);
 
     useEffect(() => {
         if (progressStatus) {
@@ -18,7 +18,7 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
                 if (progressData && progressData.length === 0) {
                     clearInterval(interval);
                     setProgressStatus(false);
-                    setDownloadComplte(true);
+                    setDownloadComplete(true);
                     setProgressData([])
                 } else {
                     console.log(progressData);
@@ -44,6 +44,7 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
                 if (currentPath) {
                     await downloadYtVideo(formData, currentPath, uuid, uuidv4());
                     setProgressStatus(true);
+                    setDownloadComplete(false)
                 }
             }
         )
@@ -54,14 +55,16 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
             const progressKey = Object.keys(progress)[0];
             const progressInfo = progress[progressKey];
             return (
-                <div>
-                    {progressInfo.audioMessage}
-                    {progressInfo.audioMB}
-                    {progressInfo.videoMessage}
-                    {progressInfo.videoMB}
-                    {progressInfo.mergedMessage}
-                    {progressInfo.mergedProcessing}
-                    {progressInfo.runningTimeMessage}
+                <div key={progressKey}>
+                    <p>{progressInfo.audioMessage}</p>
+                    <p>{progressInfo.audioMB}</p>
+                    <ProgressBar percentage={progressInfo.audioProgressBar} />
+                    <p>{progressInfo.videoMessage}</p>
+                    <p>{progressInfo.videoMB}</p>
+                    <ProgressBar percentage={progressInfo.videoProgressBar} />
+                    <p>{progressInfo.mergedMessage}</p>
+                    <p>{progressInfo.mergedProcessing}</p>
+                    <p>{progressInfo.runningTimeMessage}</p>
                 </div>
             )
         })

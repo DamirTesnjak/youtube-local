@@ -42,11 +42,13 @@ export async function downloadYtVideo(formData, currentPath: string, uuid: strin
 
         const progressData = {
             "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
-            "audioMB": `(${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB).${' '.repeat(10)}\n`,
+            "audioMB": `${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB`,
+            "audioProgressBar": (tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2),
             "videoMessage": `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
-            "videoMB": `(${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB).${' '.repeat(10)}\n`,
+            "videoMB": `${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB`,
+            "videoProgressBar": (tracker.video.downloaded / tracker.video.total * 100).toFixed(2),
             "mergedMessage": `Merged | processing frame ${tracker.merged.frame} `,
-            "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed}).${' '.repeat(10)}\n`,
+            "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed})`,
             "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
         }
 
