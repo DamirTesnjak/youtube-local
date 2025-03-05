@@ -41,6 +41,7 @@ export async function downloadYtVideo(formData, currentPath: string, uuid: strin
         const toMB = i => (i / 1024 / 1024).toFixed(2);
 
         const progressData = {
+            "videoName": `${downloadedVideoName}.mkv`,
             "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
             "audioMB": `${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB`,
             "audioProgressBar": (tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2),
