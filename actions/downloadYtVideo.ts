@@ -4,15 +4,12 @@ import cp from 'child_process';
 import readline from "readline";
 import ytdl from '@distube/ytdl-core';
 import { findIndex } from "lodash";
-
-let cache = new Map();
-
-export async function getCache(uuid: string) {
-    return cache.get(uuid);
-}
+import {socket} from "@/util/socket";
 
 export async function downloadYtVideo(formData, currentPath: string, uuid: string, downloadUuid: string) {
     console.log('uuid', uuid);
+    let cache = new Map();
+
     const youtubeUrlVideo = formData.get('ytUrlVideo');
     const downloadedVideoName = formData.get('downloadedVideoName');
 
@@ -53,6 +50,9 @@ export async function downloadYtVideo(formData, currentPath: string, uuid: strin
             "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
         }
 
+        socket.on('downloadProgress', (progress) => {
+            console.log('downloadProgress', progress);
+        })
 
         if (cache.get(uuid)){
             const currentDownloads = cache.get(uuid);
@@ -67,6 +67,8 @@ export async function downloadYtVideo(formData, currentPath: string, uuid: strin
         } else {
             cache.set(uuid, [{ [downloadUuid]: progressData }])
         }
+
+        socket.emit('download', cache.get(uuid))
     };
 
     const ffmpegProcess = cp.spawn("./node_modules/ffmpeg-static/ffmpeg", [
@@ -102,9 +104,11 @@ export async function downloadYtVideo(formData, currentPath: string, uuid: strin
         // remove finished download progress data
         currentDownloads = currentDownloads.slice(0, currDlIndex).concat(currentDownloads.slice(currDlIndex+1))
         cache.set(uuid, currentDownloads);
+        socket.emit('download', cache.get(uuid))
 
         if (currentDownloads.length === 0) {
             cache.set(uuid, []);
+            socket.emit('download', cache.get(uuid))
         }
         clearInterval(progressbarHandle);
     });
