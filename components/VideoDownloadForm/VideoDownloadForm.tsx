@@ -1,7 +1,7 @@
 'use client'
 
 import {startTransition, useState, useEffect} from 'react';
-import {downloadYtVideo, getCache} from "@/actions/downloadYtVideo";
+import {downloadYtVideo} from "@/actions/downloadYtVideo";
 import Cookies from "js-cookie";
 import { v4 as uuidv4 } from "uuid";
 import ProgressBar from "@/components/ProgressBar/ProgressBar";
@@ -12,9 +12,7 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
     const router = useRouter();
 
     const [progressData, setProgressData] = useState([]);
-    const [progressStatus, setProgressStatus] = useState(false);
     const [downloadComplete, setDownloadComplete] = useState(false);
-    const [wsSocket, setSocket] = useState<any>(socket);
 
     const handlerOpenWindowContentModal = () => {
         Cookies.set('modalOpen', "open");
@@ -25,19 +23,21 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
         socket.on("progressData", (data) => {
             setProgressData(data);
         })
-        setSocket(socket);
-    }, []);
 
-    /* useEffect(() => {
-        if (progressStatus) {
-            console.log('testtststst');
-            wsSocket.on('progressData', (progressData) => {
-                console.log('Download video return', progressData);
-                setProgressData(progressData);
-            })
+        socket.on("allDownloadFinished", (data) => {
+            setDownloadComplete(data.allDownloadFinished);
+        })
+
+        addEventListener("beforeunload", (event) => {
+            socket.emit("disconnect", { uuid: uuid })
+            socket.disconnect()
+        });
+
+        return () => {
+            socket.off("progressData")
+            socket.off("allDownloadFinished")
         }
-        // return () => { wsSocket.disconnect(); };
-    }, [progressStatus]) */
+    }, []);
 
     function onSubmit(e) {
         e.preventDefault();
@@ -52,7 +52,6 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
             async function () {
                 if (currentPath) {
                     await downloadYtVideo(formData, currentPath, uuid, uuidv4());
-                    setProgressStatus(true);
                     setDownloadComplete(false)
                 }
             }
@@ -65,16 +64,17 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
             const progressInfo = progress[progressKey];
             return (
                 <div key={progressInfo.videoName} className="mt-3 p-3 rounded-sm border-1 border-gray-300 shadow-lg">
-                    <div className="font-semibold">{progressInfo.videoName}</div>
-                    <div id="audioTrack" className="flex flex-col mb-2">
+                    { progressInfo.videoName && <div className="font-semibold">{progressInfo.videoName}</div> }
+                    { progressInfo.audioMessage && <div id="audioTrack" className="flex flex-col mb-2">
                         <span className="text-sm">Audio {progressInfo.audioMessage} | {progressInfo.audioMB}</span>
                         <ProgressBar percentage={progressInfo.audioProgressBar} />
-                    </div>
-                    <div id="videoTrack" className="flex flex-col mb-2">
+                    </div> }
+                    { progressInfo.videoMessage && <div id="videoTrack" className="flex flex-col mb-2">
                         <span className="text-sm">Video {progressInfo.videoMessage} | {progressInfo.videoMB}</span>
                         <ProgressBar percentage={progressInfo.videoProgressBar} />
-                    </div>
-                    <p className="text-sm">{progressInfo.runningTimeMessage}</p>
+                    </div> }
+            { progressInfo.runningTimeMessage && <p className="text-sm">{progressInfo.runningTimeMessage}</p> }
+                    { progressInfo.completed && <p className="text-sm">Complete</p> }
                 </div>
             )
         })
