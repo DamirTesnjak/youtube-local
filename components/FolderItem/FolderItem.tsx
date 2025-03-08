@@ -3,8 +3,15 @@
 import {useRouter} from "next/navigation";
 import Cookies from "js-cookie";
 import {Folder} from "@phosphor-icons/react/dist/ssr";
+import {IFolderContentItem} from "@/components/WindowContent/WindowContent";
 
-export default function FolderItem({item, uuid}) {
+type IFolderItem = {
+    keyValue: string;
+    item: IFolderContentItem;
+    uuid: string;
+}
+
+export default function FolderItem({keyValue, item, uuid}: IFolderItem) {
     const router = useRouter();
 
     const openFolder = (currentPath: string) => {
@@ -14,6 +21,7 @@ export default function FolderItem({item, uuid}) {
 
     return (
         <button
+            key={keyValue}
             className="flex mr-2 ml-2 p-2 bg-gray-100 cursor-pointer"
             onClick={() => openFolder(item.filePath)}
         >

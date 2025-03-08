@@ -4,7 +4,13 @@ import getFolderContent from "@/actions/getFolderContect";
 import {cookies} from "next/headers";
 import {YoutubeLogo} from "@phosphor-icons/react/dist/ssr";
 
-export default async function DownloadVideo({params}) {
+export interface IParams {
+    params: Promise<{
+        uuid: string;
+    }>;
+}
+
+export default async function DownloadVideo({ params }: IParams) {
     const { uuid } = await params;
     const cookieStore = await cookies();
     let currentPath = cookieStore.get("currentPath")?.value;
