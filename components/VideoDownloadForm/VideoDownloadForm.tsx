@@ -8,7 +8,7 @@ import ProgressBar from "@/components/ProgressBar/ProgressBar";
 import {useRouter} from "next/navigation";
 import { socket } from "@/util/socket";
 
-type IprogressInfo = {
+type IProgressInfo = {
     videoName: string;
     audioMessage?: string;
     audioMB?: string;
@@ -36,10 +36,6 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
             setProgressData(data);
         })
 
-        socket.on("allDownloadFinished", (data) => {
-            setDownloadComplete(data.allDownloadFinished);
-        })
-
         addEventListener("beforeunload", () => {
             socket.emit("disconnect", { uuid: uuid })
             socket.disconnect()
@@ -47,21 +43,20 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
 
         return () => {
             socket.off("progressData")
-            socket.off("allDownloadFinished")
         }
     }, []);
 
     function onSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
         const ytUrlVideo  = document.getElementById("ytUrlVideo") as HTMLInputElement;
-        const downloadedVideoName  = document.getElementById("downloadedVideoName") as HTMLInputElement;
+        const videoName  = document.getElementById("videoName") as HTMLInputElement;
 
         const formData = new FormData();
 
         formData.append("ytUrlVideo", ytUrlVideo.value);
-        formData.append("downloadedVideoName", downloadedVideoName.value);
+        formData.append("videoName", videoName.value);
 
-        if (ytUrlVideo && downloadedVideoName) {
+        if (ytUrlVideo && videoName) {
             startTransition(
                 async function () {
                     if (currentPath) {
@@ -76,7 +71,7 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
     const displayProgressStatus = () => {
         return progressData && progressData.map((progress) => {
             const progressKey = Object.keys(progress)[0];
-            const progressInfo: IprogressInfo = progress[progressKey];
+            const progressInfo: IProgressInfo = progress[progressKey];
             return (
                 <div key={progressInfo.videoName} className="mt-3 p-3 rounded-sm border-1 border-gray-300 shadow-lg">
                     <div className="font-semibold">{progressInfo.videoName}</div>
@@ -104,7 +99,7 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
                 </div>
                 <div className="flex flex-col">
                     <label className="pt-2 pb-2 pl-3 pr-3 font-mono text-sm">Video name</label>
-                    <input className="pt-2 pb-2 pl-3 pr-3 rounded-sm bg-blue-100" id="downloadedVideoName"/>
+                    <input className="pt-2 pb-2 pl-3 pr-3 rounded-sm bg-blue-100" id="videoName"/>
                 </div>
                 <button
                     id="saveButton"
