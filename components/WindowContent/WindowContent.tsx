@@ -4,7 +4,25 @@ import ButtonBack from "@/components/ButtonBack/ButtonBack";
 import WindowContentItems from "@/components/WindowContent/WindowContentItems/WindowContentItems";
 import OkButton from "@/components/WindowContent/OkButton/OkButton";
 
-export default async function WindowContent({ folderContent, currentPath, uuid }) {
+export type IFolderContentItem = {
+    fileName: string | Buffer<ArrayBufferLike>;
+    filePath: string;
+    parentPath: string;
+    pathIsFile: boolean;
+    pathIsDirectory: boolean;
+    isBlockDevice: boolean;
+    isCharacterDevice: boolean
+}
+
+export type IFolderContent = IFolderContentItem[] | undefined
+
+type IWindowContent = {
+    folderContent: IFolderContent,
+    currentPath: string,
+    uuid: string,
+}
+
+export default async function WindowContent({ folderContent, currentPath, uuid }: IWindowContent) {
     return (
         <div className="position: absolute z-10 h-[100vh] w-[100vw] flex justify-center items-center bg-gray-950/50 backdrop-blur-xs">
             <div className="p-3 grid grid-flow-row w-[50vw] bg-white">
