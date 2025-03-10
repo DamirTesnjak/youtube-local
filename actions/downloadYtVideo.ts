@@ -5,6 +5,8 @@ import readline from "readline";
 import ytdl from '@distube/ytdl-core';
 import {socket} from "@/util/socket";
 import WriteStream = NodeJS.WriteStream;
+import fs from "fs";
+
 
 type ITracker = {
     start: number;
@@ -16,7 +18,7 @@ type ITracker = {
 type IProgressbarHandle = NodeJS.Timeout | number | undefined;
 type IArgs = { [x: string]: string };
 
-export async function downloadYtVideo(formData: FormData, currentPath: string, uuid: string, downloadUuid: string) {
+export async function downloadYtVideo(formData: FormData, currentPath: string, uuid: string, downloadUuid: string, clientId: string) {
     const youtubeUrlVideo = formData.get('ytUrlVideo') as string;
     const videoName = formData.get('videoName') as string;
 
@@ -29,17 +31,32 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
 
     if (!youtubeUrlVideo) {
         return {
-            success: false,
+            fail: true,
             errorMessage: 'You must specify a valid YouTube URL!',
         }
     }
 
     if (!videoName) {
         return {
-            success: false,
+            fail: true,
             errorMessage: 'You must specify a valid video name!',
         }
     }
+
+    console.log(`${currentPath}/${videoName}.mkv`);
+
+    // Test if the file already exists
+    try {
+        // @ts-ignore
+        fs.access(`${currentPath}/${videoName}.mkv`);
+    } catch (_e) {
+        console.log('\n> File exists!');
+        return {
+            fail: true,
+            errorMessage: `Video ${videoName}.mkv already exists! Try saving with different name.`,
+        }
+    }
+
 
 // Get audio and video streams
     const audio = ytdl(youtubeUrlVideo, { quality: 'highestaudio' })
@@ -53,28 +70,31 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
 
 // Prepare the progress bar
     let progressbarHandle: IProgressbarHandle = undefined;
-    const progressbarInterval = 1000;
-    const showProgress = async () => {
+    const progressbarInterval = 250;
+    const showProgress = async (pid: number) => {
         readline.cursorTo(process.stdout, 0);
         const toMB = (i: number) => (i / 1024 / 1024).toFixed(2);
 
         const progressData = {
-            "videoName": `${videoName}.mkv`,
-            "audioMessage": `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
-            "audioMB": `${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB`,
-            "audioProgressBar": (tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2),
-            "videoMessage": `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
-            "videoMB": `${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB`,
-            "videoProgressBar": (tracker.video.downloaded / tracker.video.total * 100).toFixed(2),
-            "mergedMessage": `Merged | processing frame ${tracker.merged.frame} `,
-            "mergedProcessing": `(at ${tracker.merged.fps} fps => ${tracker.merged.speed})`,
-            "runningTimeMessage": `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`
+            videoName: `${videoName}.mkv`,
+            audioMessage: `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
+            audioMB: `${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB`,
+            audioProgressBar: (tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2),
+            videoMessage: `${(tracker.video.downloaded / tracker.video.total * 100).toFixed(2)}% processed `,
+            videoMB: `${toMB(tracker.video.downloaded)}MB of ${toMB(tracker.video.total)}MB`,
+            videoProgressBar: (tracker.video.downloaded / tracker.video.total * 100).toFixed(2),
+            mergedMessage: `Merged | processing frame ${tracker.merged.frame} `,
+            mergedProcessing: `(at ${tracker.merged.fps} fps => ${tracker.merged.speed})`,
+            runningTimeMessage: `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`,
+            path: `${currentPath}/${videoName}.mkv`,
+            pid: pid,
+            uuid: uuid,
+            downloadUuid: downloadUuid,
         }
-        socket.emit('download', { uuid, downloadUuid, progressData } )
+        socket.emit('download', { uuid, downloadUuid, progressData, clientId } )
     };
 
     try {
-
         const ffmpegProcess = cp.spawn("./node_modules/ffmpeg-static/ffmpeg", [
             // Remove ffmpeg's console spamming
             '-loglevel', '8', '-hide_banner',
@@ -93,15 +113,17 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
         ], {
             windowsHide: true,
             stdio: [
-                /* Standard: stdin, stdout, stderr */
+                // Standard: stdin, stdout, stderr
                 'inherit', 'inherit', 'inherit',
-                /* Custom: pipe:3, pipe:4, pipe:5 */
+                // Custom: pipe:3, pipe:4, pipe:5
                 'pipe', 'pipe', 'pipe',
             ],
         });
+
+        const pid = ffmpegProcess.pid;
         ffmpegProcess.on('close', () => {
             console.log('done');
-            socket.emit("downloadComplete", {downloadUuid, uuid})
+            socket.emit("downloadComplete", {downloadUuid, uuid, clientId})
             clearInterval(progressbarHandle);
         });
 
@@ -111,7 +133,7 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
         if (ffmpegProcess.stdio[3]) {
             ffmpegProcess.stdio[3].on('data', chunk => {
                 // Start the progress bar
-                if (!progressbarHandle) progressbarHandle = setInterval(showProgress, progressbarInterval);
+                if (!progressbarHandle) progressbarHandle = setInterval(() => showProgress(pid as number), progressbarInterval);
                 // Parse the param=value list returned by ffmpeg
                 const lines = chunk.toString().trim().split('\n');
                 const args: IArgs = {};
@@ -132,9 +154,10 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
             // @ts-ignore
             video.pipe(ffmpegProcess.stdio[5] as WriteStream);
         }
-    } catch (_error) {
+    } catch (error) {
+        console.log("error", error);
         return {
-            success: false,
+            fail: false,
             errorMessage: `Failed to download video ${videoName}! Please try again later`,
         }
     }

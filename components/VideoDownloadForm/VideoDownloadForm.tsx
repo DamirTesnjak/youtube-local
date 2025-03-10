@@ -1,21 +1,40 @@
 'use client'
 
-import {startTransition, useState, FormEvent} from 'react';
+import {startTransition, useState, FormEvent, useEffect} from 'react';
 import {downloadYtVideo} from "@/actions/downloadYtVideo";
 import Cookies from "js-cookie";
 import { v4 as uuidv4 } from "uuid";
 import {useRouter} from "next/navigation";
 import ProgressDisplay from "@/components/ProgressDisplay/ProgressDisplay";
+import {socket} from "@/util/socket";
+import Button from "@/components/Button/Button";
+import Modal from "@/components/Modal/Modal";
 
-export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, currentPath: string }) {
+export default function VideoDownloadForm({uuid, currentPath } : {uuid: string, currentPath: string }) {
     const router = useRouter();
-
     const [downloadComplete, setDownloadComplete] = useState(false);
+    const [responseDownloadComplete, setResponseDownloadComplete] = useState<{
+        fail: boolean;
+        errorMessage: string;
+    } | undefined>({
+        fail: false,
+        errorMessage: "",
+    });
+    const [clientId, setClientId] = useState("");
 
     const handlerOpenWindowContentModal = () => {
         Cookies.set('modalOpen', "open");
         router.push(`/${uuid}`);
     }
+
+    useEffect(() => {
+        if (clientId.length === 0) {
+            socket.emit("requestSocketId");
+            socket.on("receiveSocketId", (data) => {
+                setClientId(data.socketId);
+            });
+        }
+    }, [clientId]);
 
     function onSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -31,7 +50,8 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
             startTransition(
                 async function () {
                     if (currentPath) {
-                        await downloadYtVideo(formData, currentPath, uuid, uuidv4());
+                        const response = await downloadYtVideo(formData, currentPath, uuid, uuidv4(), clientId);
+                        setResponseDownloadComplete(response)
                         setDownloadComplete(false)
                     }
                 }
@@ -64,8 +84,18 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
                 {downloadComplete && (<div>Download complete</div>)}
             </form>
             <div className="h-[80vh] overflow-y-scroll">
-                <ProgressDisplay uuid={uuid} />
+                <ProgressDisplay uuid={uuid} clientId={clientId}/>
             </div>
+            { responseDownloadComplete?.fail &&
+                <Modal
+                    title="Error"
+                    message={responseDownloadComplete.errorMessage as string}
+                    onClick={() => setResponseDownloadComplete({
+                        fail: false,
+                        errorMessage: "",
+                    })}
+                />
+            }
         </div>
     )
 }
