@@ -6,7 +6,6 @@ import ytdl from '@distube/ytdl-core';
 import {socket} from "@/util/socket";
 import WriteStream = NodeJS.WriteStream;
 import promises from "fs/promises";
-import fs from "fs";
 
 
 type ITracker = {
@@ -19,7 +18,7 @@ type ITracker = {
 type IProgressbarHandle = NodeJS.Timeout | number | undefined;
 type IArgs = { [x: string]: string };
 
-async function fileExists(filePath) {
+async function fileExists(filePath: string) {
     try {
         await promises.access(filePath);
         return true;
