@@ -5,7 +5,7 @@ import {IProgressInfo} from "@/components/ProgressDisplay/ProgressDisplay";
 import openFile from "@/actions/openFile";
 import stopDownload from "@/actions/stopDownload";
 
-export default function ProgressDisplayItem({ progressInfo }: { progressInfo: IProgressInfo }) {
+export default function ProgressDisplayItem({ progressInfo, clientId }: { progressInfo: IProgressInfo, clientId: string }) {
     return (
         <div id={progressInfo.videoName} className="mt-3 p-3 rounded-sm border-1 border-gray-300 shadow-lg">
             <span className="pr-3 font-semibold">{progressInfo.videoName}</span>
@@ -18,11 +18,12 @@ export default function ProgressDisplayItem({ progressInfo }: { progressInfo: IP
                 </button> }
                 { !progressInfo.completed && <button
                     className="w-40 pt-1 pb-1 pl-1 pr-1 rounded-sm bg-blue-950 text-white font-light font-stretch-semi-expanded cursor-pointer hover:bg-blue-600"
-                    onClick={() => stopDownload(
-                        progressInfo.pid as number,
-                        progressInfo.uuid as string,
-                        progressInfo.downloadUuid as string
-                    )}
+                    onClick={() => stopDownload({
+                        pid: progressInfo.pid as number,
+                        uuid: progressInfo.uuid as string,
+                        downloadUuid: progressInfo.downloadUuid as string,
+                        clientId,
+                    })}
                 >
                     Cancel download
                 </button> }

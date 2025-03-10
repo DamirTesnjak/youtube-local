@@ -18,6 +18,8 @@ type ITracker = {
 type IProgressbarHandle = NodeJS.Timeout | number | undefined;
 type IArgs = { [x: string]: string };
 
+// the following code is base on https://github.com/fent/node-ytdl-core/blob/master/example/ffmpeg.js on 03-10-2025
+
 export async function downloadYtVideo(formData: FormData, currentPath: string, uuid: string, downloadUuid: string, clientId: string) {
     const youtubeUrlVideo = formData.get('ytUrlVideo') as string;
     const videoName = formData.get('videoName') as string;
@@ -43,19 +45,19 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
         }
     }
 
-    console.log(`${currentPath}/${videoName}.mkv`);
-
     // Test if the file already exists
-    try {
-        // @ts-ignore
-        fs.access(`${currentPath}/${videoName}.mkv`);
-    } catch (_e) {
-        console.log('\n> File exists!');
-        return {
-            fail: true,
-            errorMessage: `Video ${videoName}.mkv already exists! Try saving with different name.`,
+    // @ts-ignore
+    fs.access(`${currentPath}/${videoName}.mkv`, (err) => {
+        if (!err) {
+            console.log('\n> File exists!');
+            return {
+                fail: true,
+                errorMessage: `Video ${videoName}.mkv already exists! Try saving with different name.`,
+            }
+        } else {
+            console.log('\n> File does not exists, proceeding download process!');
         }
-    }
+    });
 
 
 // Get audio and video streams

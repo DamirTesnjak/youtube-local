@@ -21,7 +21,7 @@ export type IProgressInfo = {
     canceledDownload?: boolean;
 }
 
-export default function ProgressDisplay({uuid}: { uuid: string }) {
+export default function ProgressDisplay({uuid, clientId}: { uuid: string; clientId: string }) {
     const [progressData, setProgressData] = useState([]);
 
     useEffect(() => {
@@ -30,7 +30,7 @@ export default function ProgressDisplay({uuid}: { uuid: string }) {
         })
 
         addEventListener("beforeunload", () => {
-            socket.emit("disconnectUser", { uuid: uuid })
+            socket.emit("disconnectUser", { uuid, clientId })
             socket.disconnect()
         });
 
@@ -46,7 +46,7 @@ export default function ProgressDisplay({uuid}: { uuid: string }) {
         const progressInfo: IProgressInfo = progress[progressKey];
         return (
             <div key={progressInfo.videoName}>
-                <ProgressDisplayItem progressInfo={progressInfo}/>
+                <ProgressDisplayItem progressInfo={progressInfo} clientId={clientId}/>
             </div>
         )
     })

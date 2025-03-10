@@ -4,7 +4,12 @@ import os from "os";
 import {execSync} from "node:child_process";
 import {socket} from "@/util/socket";
 
-export default async function stopDownload(pid: number, uuid: string, downloadUuid: string, clientId: string) {
+export default async function stopDownload({ pid, clientId, downloadUuid, uuid }: {
+    pid: number,
+    uuid: string,
+    downloadUuid: string,
+    clientId: string
+}) {
     console.log("Stopping FFmpeg process...");
 
     try {
