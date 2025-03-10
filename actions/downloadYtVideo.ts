@@ -5,6 +5,7 @@ import readline from "readline";
 import ytdl from '@distube/ytdl-core';
 import {socket} from "@/util/socket";
 import WriteStream = NodeJS.WriteStream;
+import promises from "fs/promises";
 import fs from "fs";
 
 
@@ -17,6 +18,15 @@ type ITracker = {
 
 type IProgressbarHandle = NodeJS.Timeout | number | undefined;
 type IArgs = { [x: string]: string };
+
+async function fileExists(filePath) {
+    try {
+        await promises.access(filePath);
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 // the following code is base on https://github.com/fent/node-ytdl-core/blob/master/example/ffmpeg.js on 03-10-2025
 
@@ -47,18 +57,14 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
 
     // Test if the file already exists
     // @ts-ignore
-    fs.access(`${currentPath}/${videoName}.mkv`, (err) => {
-        if (!err) {
-            console.log('\n> File exists!');
-            return {
-                fail: true,
-                errorMessage: `Video ${videoName}.mkv already exists! Try saving with different name.`,
-            }
-        } else {
-            console.log('\n> File does not exists, proceeding download process!');
-        }
-    });
+    const fileExist = await fileExists(`${currentPath}/${videoName}.mkv`);
 
+    if (fileExist) {
+        return {
+            fail: true,
+            errorMessage: `Video ${videoName}.mkv already exists on your device in folder: ${currentPath} ! Try saving with different name.`,
+        }
+    }
 
 // Get audio and video streams
     const audio = ytdl(youtubeUrlVideo, { quality: 'highestaudio' })
