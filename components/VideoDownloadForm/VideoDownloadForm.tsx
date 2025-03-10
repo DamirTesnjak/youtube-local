@@ -50,21 +50,17 @@ export default function VideoDownloadForm({uuid, currentPath} : {uuid: string, c
                     <label className="pt-2 pb-2 pl-3 pr-3 font-mono text-sm">Video name</label>
                     <input className="pt-2 pb-2 pl-3 pr-3 rounded-sm bg-blue-100" id="videoName"/>
                 </div>
-                <button
+                <Button
                     id="saveButton"
-                    className="pt-2 pb-2 pl-3 pr-3 rounded-sm bg-blue-950 text-white font-light font-stretch-semi-expanded cursor-pointer hover:bg-blue-600"
+                    text="Save video to..."
                     type="button"
                     onClick={() => handlerOpenWindowContentModal()}
-                >
-                    Save video to...
-                </button>
-                <button
-                    id="downloadButton"
-                    className="pt-2 pb-2 pl-3 pr-3 rounded-sm bg-blue-950 text-white font-light font-stretch-semi-expanded cursor-pointer hover:bg-blue-600"
+                />
+                <Button
+                    id="saveButton"
+                    text="Download"
                     type="submit"
-                >
-                    Download
-                </button>
+                />
                 {downloadComplete && (<div>Download complete</div>)}
             </form>
             <div className="h-[80vh] overflow-y-scroll">
