@@ -13,7 +13,7 @@ export interface IParams {
 export default async function DownloadVideo({ params }: IParams) {
     const { uuid } = await params;
     const cookieStore = await cookies();
-    let currentPath = cookieStore.get("currentPath")?.value;
+    const currentPath = cookieStore.get("currentPath")?.value;
     const openModal = cookieStore.get("modalOpen")?.value;
     const result = await getFolderContent(currentPath);
 

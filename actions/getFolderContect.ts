@@ -4,9 +4,11 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-const homeFolder = os.homedir();
+const homeFolder = "/host";
 
 export default async function getFolderContent(folderPath: string | undefined) {
+    // @ts-ignore
+    console.log(`Node.js is running as UID: ${process.getuid()} and GID: ${process.getgid()}`);
     const dirPath = folderPath && folderPath.length > 0 ? folderPath : homeFolder;
 
     try {
