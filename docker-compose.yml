@@ -1,0 +1,29 @@
+services:
+  web:
+    container_name: YTLocal
+    build:
+      context: .
+      dockerfile: ./nextjs/Dockerfile
+    ports:
+      - "4000:3000"
+    networks:
+      - app-network
+    privileged: true  # Grants the container additional privileges
+    volumes:
+      - "/home/damir/test:/host:rw,Z"
+    stdin_open: true  # Keep stdin open (equivalent to `-i` flag)
+    tty: true  # Allocate a pseudo-TTY (equivalent to `-t` flag)
+    user: "1000:1000"
+    command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
+    depends_on:
+      - websocket
+  websocket:
+    container_name: websocket
+    build:
+      context: .
+      dockerfile: ./webSocket/Dockerfile
+    ports:
+      - "5001:5001"
+networks:
+  app-network:
+    driver: bridge
