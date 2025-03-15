@@ -5,7 +5,7 @@ import {IProgressInfo} from "@/components/ProgressDisplay/ProgressDisplay";
 import openFile from "@/actions/openFile";
 import stopDownload from "@/actions/stopDownload";
 
-export default function ProgressDisplayItem({ progressInfo, clientId }: { progressInfo: IProgressInfo, clientId: string }) {
+export default function ProgressDisplayItem({ progressInfo, clientId }: { progressInfo: IProgressInfo, clientId: string}) {
     return (
         <div id={progressInfo.videoName} className="mt-3 p-3 rounded-sm border-1 border-gray-300 shadow-lg">
             <span className="pr-3 font-semibold">{progressInfo.videoName}</span>

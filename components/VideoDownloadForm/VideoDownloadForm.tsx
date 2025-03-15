@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 import { v4 as uuidv4 } from "uuid";
 import {useRouter} from "next/navigation";
 import ProgressDisplay from "@/components/ProgressDisplay/ProgressDisplay";
-import {socket} from "@/util/socket";
+import { getSocket } from '@/util/socket';
 import Button from "@/components/Button/Button";
 import Modal from "@/components/Modal/Modal";
 
@@ -28,13 +28,14 @@ export default function VideoDownloadForm({uuid, currentPath } : {uuid: string, 
     }
 
     useEffect(() => {
-        if (clientId.length === 0) {
-            socket.emit("requestSocketId");
-            socket.on("receiveSocketId", (data) => {
-                setClientId(data.socketId);
-            });
+        const socket = getSocket();
+        socket.on("receiveSocketId", (data) => {
+            setClientId(data.socketId);
+        })
+        return () => {
+            socket.off("receiveSocketId")
         }
-    }, [clientId]);
+    }, []);
 
     function onSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -50,7 +51,13 @@ export default function VideoDownloadForm({uuid, currentPath } : {uuid: string, 
             startTransition(
                 async function () {
                     if (currentPath) {
-                        const response = await downloadYtVideo(formData, currentPath, uuid, uuidv4(), clientId);
+                        const response = await downloadYtVideo({
+                            formData,
+                            currentPath,
+                            uuid,
+                            downloadUuid: uuidv4(),
+                            clientId,
+                        });
                         setResponseDownloadComplete(response)
                         setDownloadComplete(false)
                     }
@@ -84,7 +91,7 @@ export default function VideoDownloadForm({uuid, currentPath } : {uuid: string, 
                 {downloadComplete && (<div>Download complete</div>)}
             </form>
             <div className="h-[80vh] overflow-y-scroll">
-                <ProgressDisplay uuid={uuid} clientId={clientId}/>
+                <ProgressDisplay uuid={uuid} clientId={clientId} />
             </div>
             { responseDownloadComplete?.fail &&
                 <Modal

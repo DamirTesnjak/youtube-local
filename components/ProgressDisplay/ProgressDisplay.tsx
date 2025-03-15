@@ -1,10 +1,12 @@
 'use client'
 
 import {useEffect, useState} from "react";
-import {socket} from "@/util/socket";
 import ProgressDisplayItem from "@/components/ProgressDisplay/ProgressDisplayItem/ProgressDisplayItem";
+import { getSocket } from '@/util/socket';
+import { IProgressData } from '@/actions/downloadYtVideo';
 
 export type IProgressInfo = {
+    [x: string]: string | number | boolean | undefined;
     videoName: string;
     audioMessage?: string;
     audioMB?: string;
@@ -19,34 +21,45 @@ export type IProgressInfo = {
     uuid?: string;
     downloadUuid?: string;
     canceledDownload?: boolean;
+    clientId: string;
 }
 
-export default function ProgressDisplay({uuid, clientId}: { uuid: string; clientId: string }) {
-    const [progressData, setProgressData] = useState([]);
+export type IProgressDisplay = {
+  uuid: string;
+  clientId: string;
+}
+
+export default function ProgressDisplay({uuid, clientId }: IProgressDisplay) {
+    const [progressData, setProgressData] = useState<IProgressData[]>([]);
 
     useEffect(() => {
-        socket.on("progressData", (data) => {
+      const socket = getSocket()
+
+      socket.on("progressData", (data) => {
+            console.log("data", data);
             setProgressData(data);
         })
 
         addEventListener("beforeunload", () => {
-            socket.emit("disconnectUser", { uuid, clientId })
-            socket.disconnect()
+          socket.emit("disconnectUser", { uuid, clientId })
+          socket.disconnect()
         });
 
         return () => {
-            socket.off("progressData")
-            socket.off("disconnectUser")
-            socket.disconnect()
+          socket.off("progressData")
+          socket.off("disconnectUser")
+          socket.disconnect()
         }
     }, []);
 
-    return progressData && progressData.map((progress) => {
+    return progressData && progressData.map((progress: IProgressData) => {
         const progressKey = Object.keys(progress)[0];
-        const progressInfo: IProgressInfo = progress[progressKey];
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+      const progressInfo = progress[progressKey];
         return (
             <div key={progressInfo.videoName}>
-                <ProgressDisplayItem progressInfo={progressInfo} clientId={clientId}/>
+                <ProgressDisplayItem progressInfo={progressInfo} clientId={clientId} />
             </div>
         )
     })

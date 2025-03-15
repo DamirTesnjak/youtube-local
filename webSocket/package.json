@@ -1,0 +1,17 @@
+{
+  "name": "youtube-local-websocket",
+  "version": "1.0.0",
+  "description": "Websocket for Youtube-local App",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Damir Tešnjak",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "lodash": "^4.17.21",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  }
+}

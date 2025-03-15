@@ -13,7 +13,7 @@ export default async function openFile(filePath: string) {
         } else if (osPlatform === "darwin") {
             command = `start "${filePath}"`;
         } else if (osPlatform === "linux") {
-            command = `xdg-open "${filePath}"`; // Linux
+            command = `"${filePath}"`; // Linux
         }
 
         execSync(command, {timeout: 5000 })

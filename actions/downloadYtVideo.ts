@@ -3,10 +3,33 @@
 import cp from 'child_process';
 import readline from "readline";
 import ytdl from '@distube/ytdl-core';
-import {socket} from "@/util/socket";
-import WriteStream = NodeJS.WriteStream;
 import promises from "fs/promises";
+import { WriteStream } from 'node:fs';
 
+export type IProgressData = {
+    videoName: string;
+    audioMessage?: string;
+    audioMB?: string;
+    audioProgressBar?: string;
+    videoMessage?: string;
+    videoMB?: string;
+    videoProgressBar?: string;
+    mergedMessage?: string;
+    mergedProcessing?: string;
+    runningTimeMessage?: string;
+    path?: string;
+    pid?: string;
+    uuid?: string;
+    downloadUuid?: string;
+}
+
+type IDownloadYtVideo = {
+    formData: FormData;
+    currentPath: string;
+    uuid: string;
+    downloadUuid: string;
+    clientId: string;
+}
 
 type ITracker = {
     start: number;
@@ -29,7 +52,7 @@ async function fileExists(filePath: string) {
 
 // the following code is base on https://github.com/fent/node-ytdl-core/blob/master/example/ffmpeg.js on 03-10-2025
 
-export async function downloadYtVideo(formData: FormData, currentPath: string, uuid: string, downloadUuid: string, clientId: string) {
+export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid, clientId }: IDownloadYtVideo) {
     const youtubeUrlVideo = formData.get('ytUrlVideo') as string;
     const videoName = formData.get('videoName') as string;
 
@@ -55,7 +78,6 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
     }
 
     // Test if the file already exists
-    // @ts-ignore
     const fileExist = await fileExists(`${currentPath}/${videoName}.mkv`);
 
     if (fileExist) {
@@ -98,7 +120,12 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
             uuid: uuid,
             downloadUuid: downloadUuid,
         }
-        socket.emit('download', { uuid, downloadUuid, progressData, clientId } )
+
+        await fetch('http://websocket:5002/emit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ eventName: "download", data: { uuid, downloadUuid, progressData, clientId } })
+        })
     };
 
     try {
@@ -128,9 +155,13 @@ export async function downloadYtVideo(formData: FormData, currentPath: string, u
         });
 
         const pid = ffmpegProcess.pid;
-        ffmpegProcess.on('close', () => {
+        ffmpegProcess.on('close', async () => {
             console.log('done');
-            socket.emit("downloadComplete", {downloadUuid, uuid, clientId})
+            await fetch('http://websocket:5002/emit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventName: "downloadComplete", data: {downloadUuid, uuid, clientId} })
+            })
             clearInterval(progressbarHandle);
         });
 
