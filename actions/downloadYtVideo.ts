@@ -78,12 +78,12 @@ export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid
     }
 
     // Test if the file already exists
-    const fileExist = await fileExists(`${currentPath}/${videoName}.mkv`);
+    const fileExist = await fileExists(`${currentPath}/${videoName}.mp4`);
 
     if (fileExist) {
         return {
             fail: true,
-            errorMessage: `Video ${videoName}.mkv already exists on your device in folder: ${currentPath} ! Try saving with different name.`,
+            errorMessage: `Video ${videoName}.mp4 already exists on your device in folder: ${currentPath} ! Try saving with different name.`,
         }
     }
 
@@ -105,7 +105,7 @@ export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid
         const toMB = (i: number) => (i / 1024 / 1024).toFixed(2);
 
         const progressData = {
-            videoName: `${videoName}.mkv`,
+            videoName: `${videoName}.mp4`,
             audioMessage: `${(tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2)}% processed`,
             audioMB: `${toMB(tracker.audio.downloaded)}MB of ${toMB(tracker.audio.total)}MB`,
             audioProgressBar: (tracker.audio.downloaded / tracker.audio.total * 100).toFixed(2),
@@ -115,7 +115,7 @@ export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid
             mergedMessage: `Merged | processing frame ${tracker.merged.frame} `,
             mergedProcessing: `(at ${tracker.merged.fps} fps => ${tracker.merged.speed})`,
             runningTimeMessage: `running for: ${((Date.now() - tracker.start) / 1000 / 60).toFixed(2)} Minutes.`,
-            path: `${currentPath}/${videoName}.mkv`,
+            path: `${currentPath}/${videoName}.mp4`,
             pid: pid,
             uuid: uuid,
             downloadUuid: downloadUuid,
@@ -143,7 +143,7 @@ export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid
             // Keep encoding
             '-c:v', 'copy',
             // Define output file
-            `${currentPath}/${videoName}.mkv`,
+            `${currentPath}/${videoName}.mp4`,
         ], {
             windowsHide: true,
             stdio: [

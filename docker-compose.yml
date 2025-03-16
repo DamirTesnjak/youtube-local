@@ -17,6 +17,7 @@ services:
     command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
     depends_on:
       - websocket
+      - fileshare
   websocket:
     container_name: websocket
     build:
@@ -27,6 +28,22 @@ services:
     networks:
       - app_network
 
+  fileshare:
+    container_name: fileshare
+    build:
+      context: .
+      dockerfile: ./fileShareServer/Dockerfile
+    ports:
+      - "4001:3000"
+    networks:
+      - app_network
+    privileged: true  # Grants the container additional privileges
+    volumes:
+      - "/home/damir/test:/host:rw,Z"
+    stdin_open: true  # Keep stdin open (equivalent to `-i` flag)
+    tty: true  # Allocate a pseudo-TTY (equivalent to `-t` flag)
+    user: "1000:1000"
+    command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
 
   nginx:
     image: nginx:latest
@@ -38,6 +55,7 @@ services:
     depends_on:
       - web
       - websocket
+      - fileshare
     networks:
       - app_network
 
