@@ -16,10 +16,10 @@ services:
     user: "${UID}:${GID}"
     env_file:
       - .env
-    command: bash -c "chown -R ${UID}:${GID} /host && chmod -R 770 /host && node server.js"
+    command: bash -c "[ $(uname -s) = 'Linux' ] && chown -R ${UID}:${GID} /host && chmod -R 770 /host; node server.js"
     depends_on:
       - websocket
-      - fileshare
+      - videostreaming
 
   websocket:
     container_name: websocket
@@ -31,8 +31,8 @@ services:
     networks:
       - app_network
 
-  fileshare:
-    container_name: fileshare
+  videostreaming:
+    container_name: videostreaming
     build:
       context: .
       dockerfile: videoStreamingServer/Dockerfile
@@ -48,7 +48,7 @@ services:
     user: "${UID}:${GID}"
     env_file:
       - .env
-    command: bash -c "chown -R ${UID}:${GID} /host && chmod -R 770 /host && node server.js"
+    command: bash -c "[ $(uname -s) = 'Linux' ] && chown -R ${UID}:${GID} /host && chmod -R 770 /host; node server.js"
 
   nginx:
     image: nginx:1.27.4
@@ -60,7 +60,7 @@ services:
     depends_on:
       - web
       - websocket
-      - fileshare
+      - videostreaming
     networks:
       - app_network
 
