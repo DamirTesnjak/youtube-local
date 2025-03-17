@@ -36,7 +36,6 @@ export default function ProgressDisplay({uuid, clientId }: IProgressDisplay) {
       const socket = getSocket()
 
       socket.on("progressData", (data) => {
-            console.log("data", data);
             setProgressData(data);
         })
 

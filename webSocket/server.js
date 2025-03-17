@@ -33,25 +33,13 @@ if (io) {
 
         socket.emit("receiveSocketId", { socketId: socket.id });
 
-        socket.on("testEvent", (data) => {
-            console.log("testEvent", data);
-            io.to(data.clientId).emit("progressData", [{
-                videoName: "testVideo",
-                path: "",
-                completed: true
-            }]);
-        })
-
         socket.on("download", (data) => {
-            console.log("Download data...", data);
             if (userData[data.uuid] && userData[data.uuid].length === 0) {
-                console.log("Downloaded1");
                 delete userData[data.uuid];
                 io.to(data.clientId).emit("progressData", []);
             }
 
             if (userData[data.uuid]) {
-                console.log("Downloaded2");
                 const uuidCurrentDlProgressData = userData[data.uuid];
                 const currDlIndex = findIndex(uuidCurrentDlProgressData, data.downloadUuid)
 
@@ -63,7 +51,6 @@ if (io) {
                 }
                 io.to(data.clientId).emit("progressData", userData[data.uuid]);
             } else {
-                console.log("Downloaded3");
                 userData[data.uuid] = [{ [data.downloadUuid]: data.progressData }]
                 io.to(data.clientId).emit("progressData", userData[data.uuid]);
             }
@@ -123,14 +110,12 @@ if (io) {
         const { eventName, data } = req.body;
         // Wait for connection before emitting
         if (!socket.connected) {
-            console.log("Received eventName2", eventName);
             socket.connect();
             socket.once("connect", () => {
                 console.log("Connected to WebSocket server from Express");
                 socket.emit(eventName, data);
             });
         } else {
-            console.log("Received eventName2", eventName);
             socket.emit(eventName, data);
         }
         res.send({ data: 'ok'})
