@@ -47,7 +47,7 @@ services:
     command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.27.4
     container_name: nginx
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf

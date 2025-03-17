@@ -1,7 +1,7 @@
 {
-  "name": "youtube-local-websocket",
+  "name": "youtube-local-video-streaming",
   "version": "1.0.0",
-  "description": "Websocket for Youtube-local App",
+  "description": "Enables video stream of downloaded videos for Youtube-local app",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,7 +9,7 @@
   "author": "Damir Tešnjak",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.21.2",
-    "helmet": "^8.0.0"
+    "express": "4.21.2",
+    "helmet": "8.0.0"
   }
 }
