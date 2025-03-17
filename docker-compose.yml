@@ -10,11 +10,13 @@ services:
       - app_network
     privileged: true # Grants the container additional privileges
     volumes:
-      - '/home/damir/test:/host:rw,Z'
+      - '~/test:/host:rw,Z'
     stdin_open: true # Keep stdin open (equivalent to `-i` flag)
     tty: true # Allocate a pseudo-TTY (equivalent to `-t` flag)
-    user: '1000:1000'
-    command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
+    user: "${UID}:${GID}"
+    env_file:
+      - .env
+    command: bash -c "chown -R ${UID}:${GID} /host && chmod -R 770 /host && node server.js"
     depends_on:
       - websocket
       - fileshare
@@ -33,18 +35,20 @@ services:
     container_name: fileshare
     build:
       context: .
-      dockerfile: ./fileShareServer/Dockerfile
+      dockerfile: videoStreamingServer/Dockerfile
     ports:
       - '4001:3000'
     networks:
       - app_network
     privileged: true # Grants the container additional privileges
     volumes:
-      - '/home/damir/test:/host:rw,Z'
+      - '~/test:/host:rw,Z'
     stdin_open: true # Keep stdin open (equivalent to `-i` flag)
     tty: true # Allocate a pseudo-TTY (equivalent to `-t` flag)
-    user: '1000:1000'
-    command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
+    user: "${UID}:${GID}"
+    env_file:
+      - .env
+    command: bash -c "chown -R ${UID}:${GID} /host && chmod -R 770 /host && node server.js"
 
   nginx:
     image: nginx:1.27.4
