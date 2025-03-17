@@ -146,7 +146,7 @@ export async function downloadYtVideo({
         data: { uuid, downloadUuid, progressData, clientId },
       }),
     })
-      .then((res) => {})
+      .then((_res) => {})
       .catch((err) => {
         console.error(
           'Error connecting to websocket! Terminating the download',
