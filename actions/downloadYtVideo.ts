@@ -5,6 +5,7 @@ import readline from "readline";
 import ytdl from '@distube/ytdl-core';
 import promises from "fs/promises";
 import { WriteStream } from 'node:fs';
+import stopDownload from '@/actions/stopDownload';
 
 export type IProgressData = {
     videoName: string;
@@ -125,6 +126,11 @@ export async function downloadYtVideo({formData, currentPath, uuid, downloadUuid
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ eventName: "download", data: { uuid, downloadUuid, progressData, clientId } })
+        }).then((res) => {})
+          .catch((err) => {
+              console.error("Error connecting to websocket! Terminating the download", err);
+              console.error(err);
+              stopDownload({pid, clientId, downloadUuid, uuid})
         })
     };
 
