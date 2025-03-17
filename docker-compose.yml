@@ -5,26 +5,27 @@ services:
       context: .
       dockerfile: ./nextjs/Dockerfile
     ports:
-      - "4000:3000"
+      - '4000:3000'
     networks:
       - app_network
-    privileged: true  # Grants the container additional privileges
+    privileged: true # Grants the container additional privileges
     volumes:
-      - "/home/damir/test:/host:rw,Z"
-    stdin_open: true  # Keep stdin open (equivalent to `-i` flag)
-    tty: true  # Allocate a pseudo-TTY (equivalent to `-t` flag)
-    user: "1000:1000"
+      - '/home/damir/test:/host:rw,Z'
+    stdin_open: true # Keep stdin open (equivalent to `-i` flag)
+    tty: true # Allocate a pseudo-TTY (equivalent to `-t` flag)
+    user: '1000:1000'
     command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
     depends_on:
       - websocket
       - fileshare
+
   websocket:
     container_name: websocket
     build:
       context: .
       dockerfile: ./webSocket/Dockerfile
     ports:
-      - "5001:5001"
+      - '5001:5001'
     networks:
       - app_network
 
@@ -34,15 +35,15 @@ services:
       context: .
       dockerfile: ./fileShareServer/Dockerfile
     ports:
-      - "4001:3000"
+      - '4001:3000'
     networks:
       - app_network
-    privileged: true  # Grants the container additional privileges
+    privileged: true # Grants the container additional privileges
     volumes:
-      - "/home/damir/test:/host:rw,Z"
-    stdin_open: true  # Keep stdin open (equivalent to `-i` flag)
-    tty: true  # Allocate a pseudo-TTY (equivalent to `-t` flag)
-    user: "1000:1000"
+      - '/home/damir/test:/host:rw,Z'
+    stdin_open: true # Keep stdin open (equivalent to `-i` flag)
+    tty: true # Allocate a pseudo-TTY (equivalent to `-t` flag)
+    user: '1000:1000'
     command: bash -c "chown -R 1000:1000 /host && chmod -R 770 /host && node server.js"
 
   nginx:
@@ -51,7 +52,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - "80:80"
+      - '80:80'
     depends_on:
       - web
       - websocket
