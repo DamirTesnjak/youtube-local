@@ -16,10 +16,11 @@ services:
     user: "${UID}:${GID}"
     env_file:
       - .env
-    command: bash -c "[ $(uname -s) = 'Linux' ] && chown -R ${UID}:${GID} /host && chmod -R 770 /host; node server.js"
+    command: bash -c "[ $$(uname -s) = 'Linux' ] && chown -R $${UID}:$${GID} /host && chmod -R 770 /host; node server.js"
     depends_on:
       - websocket
       - videostreaming
+    restart: on-failure
 
   websocket:
     container_name: websocket
@@ -30,6 +31,7 @@ services:
       - '5001:5001'
     networks:
       - app_network
+    restart: on-failure
 
   videostreaming:
     container_name: videostreaming
@@ -48,7 +50,8 @@ services:
     user: "${UID}:${GID}"
     env_file:
       - .env
-    command: bash -c "[ $(uname -s) = 'Linux' ] && chown -R ${UID}:${GID} /host && chmod -R 770 /host; node server.js"
+    command: bash -c "[ $$(uname -s) = 'Linux' ] && chown -R $${UID}:$${GID} /host && chmod -R 770 /host; node server.js"
+    restart: on-failure
 
   nginx:
     image: nginx:1.27.4

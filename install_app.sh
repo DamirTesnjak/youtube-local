@@ -16,9 +16,26 @@ else
     exit 1
 fi
 
+# Define the directory path
+DIR="$HOME/test"
+
+# Create the directory if it doesn't exist
+if [ ! -d "$DIR" ]; then
+    mkdir -p "$DIR"
+    echo "Directory '$DIR' created."
+else
+    echo "Directory '$DIR' already exists."
+fi
+
+# Ensure the directory has the correct ownership
+chown -R $USER:$USER "$DIR"
+
 # Create .env file
 echo "UID=${UID_VALUE}" > .env
 echo "GID=${GID_VALUE}" >> .env
 
 echo "Running Docker Compose with UID=$UID_VALUE and GID=$GID_VALUE..."
+
 docker-compose up -d
+
+

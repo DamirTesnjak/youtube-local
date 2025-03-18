@@ -64,25 +64,33 @@ if (io) {
     });
 
     socket.on('downloadComplete', (data) => {
+      console.log("DATA:", data);
       const modifiedData = userData[data.uuid] ? [...userData[data.uuid]] : [];
+      console.log("MODIFIED_DATA:", modifiedData);
       const index = findIndex(modifiedData, data.downloadUuid);
-      modifiedData[index][data.downloadUuid] = {
-        videoName: modifiedData[index][data.downloadUuid].videoName,
-        path: modifiedData[index][data.downloadUuid].path,
-        completed: true,
-      };
-      io.to(data.clientId).emit('progressData', modifiedData);
+      console.log("INDEX:", index);
+      if (modifiedData[index]) {
+        modifiedData[index][data.downloadUuid] = {
+          videoName: modifiedData[index][data.downloadUuid].videoName,
+          path: modifiedData[index][data.downloadUuid].path,
+          completed: true,
+        };
+        io.to(data.clientId).emit('progressData', modifiedData);
+      }
     });
 
     socket.on('cancelDownload', (data) => {
       const modifiedData = [...userData[data.uuid]];
       const index = findIndex(modifiedData, data.downloadUuid);
-      modifiedData[index][data.downloadUuid] = {
-        videoName: modifiedData[index][data.downloadUuid].videoName,
-        path: modifiedData[index][data.downloadUuid].path,
-        canceledDownload: true,
-      };
-      io.to(data.clientId).emit('progressData', modifiedData);
+
+      if (modifiedData[index]) {
+        modifiedData[index][data.downloadUuid] = {
+          videoName: modifiedData[index][data.downloadUuid].videoName,
+          path: modifiedData[index][data.downloadUuid].path,
+          canceledDownload: true,
+        };
+        io.to(data.clientId).emit('progressData', modifiedData);
+      }
     });
 
     // Handle disconnection
