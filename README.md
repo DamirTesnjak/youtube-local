@@ -19,7 +19,7 @@ Install any Docker hosting provider, such as [Docker](https://www.docker.com/) i
   ```
   Then execute the command:
   ```bash
-  ./run_docker.sh
+  ./install_app.sh
   ```
 
 ---
