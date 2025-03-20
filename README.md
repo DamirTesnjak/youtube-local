@@ -11,6 +11,10 @@ git clone https://github.com/DamirTesnjak/youtube-local.git
 ### Install a Docker hosting provider
 Install any Docker hosting provider, such as [Docker](https://www.docker.com/) itself, if you do not have one installed already.
 
+> **Note:**   Do not forget to add your user to docker group, if you are running Linux!
+> ```sudo usermod -aG docker $USER```
+> On Windows Docker Desktop runs with administrative privileges by default
+
 ### Run the `install_app.sh` script
 - **Windows:** Run the script using **[GIT for Windows](https://gitforwindows.org/)**.
 - **Linux:** Grant execution permission to the script by running:
